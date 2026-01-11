@@ -1,0 +1,52 @@
+{
+  "name": "vs-messenger",
+  "displayName": "VS Messenger",
+  "description": "Messenger in your sidebar",
+  "icon": "icon.jpg",
+  "version": "0.0.1",
+  "publisher": "VSMessenger",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vsmessenger-container",
+          "title": "VS Messenger",
+          "icon": "$(comment-discussion)"
+        }
+      ]
+    },
+    "views": {
+      "vsmessenger-container": [
+        {
+          "id": "vsmessenger.view",
+          "name": "VS Messenger",
+          "type": "webview"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "npm run compile && node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.130",
+    "@types/vscode": "^1.80.0",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "puppeteer": "^24.34.0",
+    "ws": "^8.19.0"
+  }
+}
