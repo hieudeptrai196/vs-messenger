@@ -3,7 +3,7 @@
   "displayName": "VS Messenger",
   "description": "Messenger in your sidebar",
   "icon": "icon.jpg",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "VSMessenger",
   "engines": {
     "vscode": "^1.80.0"

@@ -53,7 +53,7 @@ async function handleConnection(ws: WebSocket) {
                 headless: true,
                 userDataDir: userDataDir,
                 args: [
-                    '--no-sandbox', 
+                    '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-blink-features=AutomationControlled'
                 ]
@@ -62,9 +62,9 @@ async function handleConnection(ws: WebSocket) {
             const pages = await browserInstance.pages();
             pageInstance = pages.length > 0 ? pages[0] : await browserInstance.newPage();
 
-             // Navigation Listener for Login Status
+            // Navigation Listener for Login Status
             pageInstance.on('framenavigated', async (frame) => {
-                if(frame === pageInstance?.mainFrame() && activeWs?.readyState === WebSocket.OPEN) {
+                if (frame === pageInstance?.mainFrame() && activeWs?.readyState === WebSocket.OPEN) {
                     const url = frame.url();
                     // Broader check: messenger.com without 'login'
                     const isLoggedIn = (url.includes('messenger.com') && !url.includes('login') && !url.includes('checkpoint')) || (url.includes('facebook.com') && !url.includes('login') && !url.includes('checkpoint'));
@@ -74,25 +74,25 @@ async function handleConnection(ws: WebSocket) {
 
             await pageInstance.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
             // Initial: Narrow width to trigger responsive layout (like phone/tablet)
-            await pageInstance.setViewport({ width: 450, height: 800 }); 
+            await pageInstance.setViewport({ width: 450, height: 800 });
             await pageInstance.goto('https://www.messenger.com/');
         } else {
-             // ...
+            // ...
         }
 
         // Send initial status
         if (ws.readyState === WebSocket.OPEN) {
-             const url = pageInstance!.url(); 
-             const isLoggedIn = (url.includes('messenger.com') && !url.includes('login') && !url.includes('checkpoint')) || (url.includes('facebook.com') && !url.includes('login') && !url.includes('checkpoint'));
-             ws.send(JSON.stringify({ type: 'status', loggedIn: isLoggedIn }));
+            const url = pageInstance!.url();
+            const isLoggedIn = (url.includes('messenger.com') && !url.includes('login') && !url.includes('checkpoint')) || (url.includes('facebook.com') && !url.includes('login') && !url.includes('checkpoint'));
+            ws.send(JSON.stringify({ type: 'status', loggedIn: isLoggedIn }));
         }
 
         // Cleanup previous CDP session if exists
         if (activeCdp) {
-             try { await activeCdp.detach(); } catch (e) { }
+            try { await activeCdp.detach(); } catch (e) { }
         }
 
-        const client = await pageInstance!.target().createCDPSession(); 
+        const client = await pageInstance!.target().createCDPSession();
         activeCdp = client;
 
         await client.send('Page.startScreencast', { format: 'jpeg', quality: 50, everyNthFrame: 1 });
@@ -118,71 +118,71 @@ async function handleConnection(ws: WebSocket) {
 
         ws.on('message', async (message) => {
             if (!pageInstance) return;
-        const msg = JSON.parse(message.toString());
+            const msg = JSON.parse(message.toString());
 
-        try {
-            if (msg.type === 'click') {
-                await pageInstance.mouse.click(msg.x, msg.y);
-            } else if (msg.type === 'scroll') {
-                await pageInstance.mouse.wheel({ deltaY: msg.dy });
-            } else if (msg.type === 'toggle-position') {
-                // Revert to simple global toggle as requested
-                vscode.commands.executeCommand('workbench.action.toggleSidebarPosition');
-            } else if (msg.type === 'reload') {
-                await pageInstance.reload();
-            } else if (msg.type === 'key') {
-                try {
-                    if (msg.modifiers && msg.modifiers.length > 0) {
-                         for (const mod of msg.modifiers) await pageInstance.keyboard.down(mod);
-                         await pageInstance.keyboard.press(msg.key);
-                         for (let i = msg.modifiers.length - 1; i >= 0; i--) {
-                             await pageInstance.keyboard.up(msg.modifiers[i]);
-                         }
-                    } else {
-                         await pageInstance.keyboard.press(msg.key);
+            try {
+                if (msg.type === 'click') {
+                    await pageInstance.mouse.click(msg.x, msg.y);
+                } else if (msg.type === 'scroll') {
+                    await pageInstance.mouse.wheel({ deltaY: msg.dy });
+                } else if (msg.type === 'toggle-position') {
+                    // Revert to simple global toggle as requested
+                    vscode.commands.executeCommand('workbench.action.toggleSidebarPosition');
+                } else if (msg.type === 'reload') {
+                    await pageInstance.reload();
+                } else if (msg.type === 'key') {
+                    try {
+                        if (msg.modifiers && msg.modifiers.length > 0) {
+                            for (const mod of msg.modifiers) await pageInstance.keyboard.down(mod);
+                            await pageInstance.keyboard.press(msg.key);
+                            for (let i = msg.modifiers.length - 1; i >= 0; i--) {
+                                await pageInstance.keyboard.up(msg.modifiers[i]);
+                            }
+                        } else {
+                            await pageInstance.keyboard.press(msg.key);
+                        }
+                    } catch (e) {
+                        // Fallback
+                        await pageInstance.keyboard.press(msg.key);
                     }
-                } catch (e) {
-                     // Fallback
-                     await pageInstance.keyboard.press(msg.key);
-                }
                 } else if (msg.type === 'type') {
                     try {
                         await pageInstance.evaluate((text) => {
                             document.execCommand('insertText', false, text);
                         }, msg.text);
                     } catch (e) {
-                         await pageInstance.keyboard.type(msg.text);
+                        await pageInstance.keyboard.type(msg.text);
                     }
                 } else if (msg.type === 'resize') {
-                     await pageInstance.setViewport({ width: msg.width, height: msg.height });
+                    await pageInstance.setViewport({ width: msg.width, height: msg.height });
                 } else if (msg.type === 'autologin') {
                     console.log('Attempting auto-login for:', msg.email);
                     try {
                         // Desktop Selectors
                         const emailSelector = '#email';
                         const passSelector = '#pass';
-                        const loginBtnSelector = '#loginbutton'; 
+                        const loginBtnSelector = '#loginbutton';
 
                         await pageInstance.waitForSelector(emailSelector, { timeout: 5000 });
-                        
-                        await pageInstance.evaluate((sel: string) => { 
+
+                        await pageInstance.evaluate((sel: string) => {
                             const el = document.querySelector(sel) as HTMLInputElement;
-                            if(el) el.value = ''; 
+                            if (el) el.value = '';
                         }, emailSelector);
                         await pageInstance.type(emailSelector, msg.email);
-                        
-                        await pageInstance.evaluate((sel: string) => { 
+
+                        await pageInstance.evaluate((sel: string) => {
                             const el = document.querySelector(sel) as HTMLInputElement;
-                            if(el) el.value = ''; 
+                            if (el) el.value = '';
                         }, passSelector);
                         await pageInstance.type(passSelector, msg.pass);
 
                         try {
                             await pageInstance.click(loginBtnSelector);
                         } catch (e) {
-                             await pageInstance.keyboard.press('Enter');
+                            await pageInstance.keyboard.press('Enter');
                         }
-                        
+
                     } catch (err) {
                         console.error('Auto login failed', err);
                     }
@@ -197,7 +197,7 @@ async function handleConnection(ws: WebSocket) {
 }
 
 class RemoteBrowserProvider implements vscode.WebviewViewProvider {
-    public static readonly viewType = 'vsmessenger.view'; 
+    public static readonly viewType = 'vsmessenger.view';
 
     constructor(
         private readonly _extensionUri: vscode.Uri,
@@ -253,20 +253,13 @@ class RemoteBrowserProvider implements vscode.WebviewViewProvider {
                 </style>
             </head>
             <body>
-                <div class="login-bar" id="login-bar-container">
-                    <div class="login-row">
-                        <input id="email" type="text" placeholder="Email / Phone" />
-                        <input id="pass" type="password" placeholder="Password" />
-                    </div>
-                    <button id="do-login">Login & Enter FB</button>
-                    <div style="font-size: 10px; color: #aaa; text-align: center;">Credentials stay local. Auto-fills into browser.</div>
-                </div>
+
 
                 <div id="view-container">
                     <div id="loader"><div class="spinner"></div></div>
                     <img id="screen" src="" />
-                     <div id="show-login-btn" style="position: absolute; top:0; right:0; background:rgba(0,0,0,0.5); color: #ccc; padding: 4px 8px; font-size: 11px; cursor: pointer; border-bottom-left-radius: 4px; z-index: 100;">Login Form</div>
-                     <div id="toggle-side-btn" style="position: absolute; top:0; right: 80px; background:rgba(0,0,0,0.5); color: #ccc; padding: 4px 8px; font-size: 11px; cursor: pointer; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; z-index: 100;">⇆</div>
+                     <div id="reload-btn" style="position: absolute; top:0; right:0; background:rgba(0,0,0,0.5); color: #ccc; padding: 4px 8px; font-size: 14px; cursor: pointer; border-bottom-left-radius: 4px; z-index: 100;">↻</div>
+                     <div id="toggle-side-btn" style="position: absolute; top:0; right: 35px; background:rgba(0,0,0,0.5); color: #ccc; padding: 4px 8px; font-size: 14px; cursor: pointer; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; z-index: 100;">⇆</div>
 
                      <!-- Trap input: Fixed but transparent -->
                      <input id="input-trap" type="text" autocomplete="off" style="position:fixed; top:0; left:0; width: 100%; height: 100%; opacity: 0; z-index: 90; cursor: default;" />
@@ -278,12 +271,8 @@ class RemoteBrowserProvider implements vscode.WebviewViewProvider {
                     
                     const img = document.getElementById('screen');
                     const loader = document.getElementById('loader');
-                    const loginBar = document.getElementById('login-bar-container');
-                    const showLoginBtn = document.getElementById('show-login-btn');
+                    const reloadBtn = document.getElementById('reload-btn');
                     const toggleSideBtn = document.getElementById('toggle-side-btn');
-
-                    const emailInput = document.getElementById('email');
-                    const doLoginBtn = document.getElementById('do-login');
                     const inputTrap = document.getElementById('input-trap');
 
                     const SCALE_FACTOR = 1.0; 
@@ -313,13 +302,6 @@ class RemoteBrowserProvider implements vscode.WebviewViewProvider {
                             img.src = 'data:image/jpeg;base64,' + msg.data;
                             // Hide loader on first frame
                             if (loader.style.display !== 'none') loader.style.display = 'none';
-                        } else if (msg.type === 'status') {
-                            // Auto-hide login bar if logged in
-                            if (msg.loggedIn) {
-                                loginBar.style.display = 'none';
-                            } else {
-                                loginBar.style.display = 'flex';
-                            }
                         }
                     };
                     
@@ -440,26 +422,7 @@ class RemoteBrowserProvider implements vscode.WebviewViewProvider {
                     // Safety: Reset composing if focus lost
                     inputTrap.addEventListener('blur', () => { isComposing = false; });
 
-                    // Auto Login logic
-                    doLoginBtn.onclick = () => {
-                        const email = emailInput.value;
-                        const pass = passInput.value;
-                        if(email && pass) {
-                            if (ws.readyState === WebSocket.OPEN) {
-                                ws.send(JSON.stringify({ type: 'autologin', email, pass }));
-                            }
-                        }
-                    };
-                    
-                    // Toggle Login
-                    showLoginBtn.onclick = () => {
-                        // Move this button above trap z-index is already 100
-                        if (loginBar.style.display === 'none') {
-                            loginBar.style.display = 'flex';
-                        } else {
-                            loginBar.style.display = 'none';
-                        }
-                    };
+
                     
                     // Toggle Side
                     toggleSideBtn.onclick = () => {
