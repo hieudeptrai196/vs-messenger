@@ -26,7 +26,6 @@ VS Messenger là một tiện ích mở rộng giúp bạn truy cập Messenger 
 
 - **Tên:** Hiếu Nguyễn
 - **Email:** hieulatoi@1962@gmail.com
-- **Liên hệ:** [Facebook](https://www.facebook.com/hieu19620/)
 
 ---
 
@@ -56,4 +55,3 @@ VS Messenger is an extension that embeds Messenger and Facebook directly into yo
 
 - **Name:** Hieu Nguyen
 - **Email:** hieulatoi@1962@gmail.com
-- **Contact:** [Facebook](https://www.facebook.com/hieu19620/)
